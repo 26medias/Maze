@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+	<title>Maze Demo</title>
+	<meta charset="UTF-8">
+	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+	<script type="text/javascript" src="fabric.js"></script>
+	<script type="text/javascript" src="maze.js"></script>
+</head>
+<body>
+	<canvas id="stage" width="500" height="500"></canvas>
+	<script type="text/javascript">
+		var maze = new game_maze({
+			canvasId:	"stage",
+			level:		"level.txt"
+		});
+		$(function () {
+			maze.init();
+			console.log("maze",maze);
+		});
+		
+	</script>
+</body>
+</html>
