@@ -7,9 +7,10 @@ function mazeEditor(options) {
 		blockSize:	20,
 		editor:		true,
 		trail:		true,
+		difficulty:	10,
 		opacity:	{
 			active:		0.9,
-			inactive:	0.05
+			inactive:	0.00
 		}
 	},options);
 	
@@ -33,7 +34,7 @@ function mazeEditor(options) {
 	
 	this.marker		= this.stage.rect(-50,0,this.options.blockSize,this.options.blockSize);
 	this.marker.attr("fill", "#ffcc00");
-	this.marker.attr("opacity", 0.6);
+	this.marker.attr("opacity", 0);
 	this.marker.attr("stroke-width", 0);
 	
 	
@@ -48,6 +49,12 @@ function mazeEditor(options) {
 	this._endpoint.attr("opacity", 1);
 	this._endpoint.attr("stroke-width", 0);
 	this.endpoint = {x:0,y:0};
+
+	this._string	= this.stage.rect(200,200,2,50);
+	this._string.attr("fill", "#000000");
+	this._string.attr("opacity", 1);
+	this._string.attr("stroke-width", 0);
+	this._string.attr("height", 0);
 	
 	$(window).bind("keydown", function(e) {
 		var code = (e.keyCode ? e.keyCode : e.which);
@@ -83,11 +90,21 @@ mazeEditor.prototype.init = function() {
 	$("#"+this.options.canvasId).bind("mouseup", function(e) {
 		scope.dragging 	= false;
 		scope.marker.attr("x",-50);
+		scope._string.attr("height", 0);
 	});
 	$("#"+this.options.canvasId).bind("mousemove", function(e) {
 		if (scope.dragging) {
 			var pos = $(this).position();
 			scope.handleDrag(e.clientX - pos.left, e.clientY - pos.top);
+			var px = scope.startpoint.x*scope.options.blockSize+scope.options.blockSize/2;
+			var py = scope.startpoint.y*scope.options.blockSize+scope.options.blockSize/2;
+			var angle = Math.atan2((e.clientY - pos.top) - py, e.clientX - pos.left - px);
+			scope._string.transform("r"+Math.round(angle*180/3.14159-90)+","+px+","+py+"");
+			var len = Math.sqrt(((e.clientY - pos.top) - py) * ((e.clientY - pos.top) - py) + (e.clientX - pos.left - px) * (e.clientX - pos.left - px))
+			scope._string.attr("height", len);
+			scope._string.attr("x", px);
+			scope._string.attr("y", py);
+			scope._string.toFront();
 		}
 	});
 	
@@ -103,6 +120,7 @@ mazeEditor.prototype.play = function() {
 mazeEditor.prototype.move = function(vx,vy) {
 	var scope = this;
 	
+	
 	if (vx > 1) {
 		vx = 1;
 	} else if (vx < -1) {
@@ -114,7 +132,16 @@ mazeEditor.prototype.move = function(vx,vy) {
 	} else if (vy < -1) {
 		vy = -1;
 	}
-		
+	
+	if (vx != 0 && vy != 0) {
+		if (this.canMove(vx,0)) {
+			vy = 0;
+		} else if (this.canMove(0,vy)) {
+			vx = 0;
+		}
+	}
+	
+	
 	// current are in this.startpoint{x,y}
 	var newPos = {
 		x: this.startpoint.x + vx,
@@ -128,20 +155,7 @@ mazeEditor.prototype.move = function(vx,vy) {
 	this.lastmove.x = newPos.x;
 	this.lastmove.y = newPos.y;
 	
-	var canMove = true;
-	if (vx == 1) {
-		canMove = canMove && !this.walls["v"][this.startpoint.x+1][this.startpoint.y].state;
-	}
-	if (vx == -1) {
-		canMove = canMove && !this.walls["v"][this.startpoint.x][this.startpoint.y].state;
-	}
-	if (vy == 1) {
-		canMove = canMove && !this.walls["h"][this.startpoint.x][this.startpoint.y+1].state;
-	}
-	if (vy == -1) {
-		canMove = canMove && !this.walls["h"][this.startpoint.x][this.startpoint.y].state;
-	}
-	if (canMove) {
+	if (this.canMove(vx,vy)) {
 		// save the new position
 		this.startpoint = {
 			x:	this.startpoint.x+vx,
@@ -162,6 +176,22 @@ mazeEditor.prototype.move = function(vx,vy) {
 			alert("YOU WON!");
 		}
 	}
+};
+mazeEditor.prototype.canMove = function(vx,vy) {
+	var canMove = true;
+	if (vx == 1) {
+		canMove = canMove && !this.walls["v"][this.startpoint.x+1][this.startpoint.y].state;
+	}
+	if (vx == -1) {
+		canMove = canMove && !this.walls["v"][this.startpoint.x][this.startpoint.y].state;
+	}
+	if (vy == 1) {
+		canMove = canMove && !this.walls["h"][this.startpoint.x][this.startpoint.y+1].state;
+	}
+	if (vy == -1) {
+		canMove = canMove && !this.walls["h"][this.startpoint.x][this.startpoint.y].state;
+	}
+	return canMove;
 };
 mazeEditor.prototype.handleDrag = function(x,y) {
 	
@@ -301,6 +331,10 @@ mazeEditor.prototype.export = function() {
 	var y;
 	var t;
 	
+	if (!this.options.textarea) {
+		return false;
+	}
+	
 	if (this.generating) {
 		return false;
 	}
@@ -386,8 +420,41 @@ mazeEditor.prototype.createWall = function(x,y,type) {
 	}
 	return true;
 };
+mazeEditor.prototype.load = function(data) {
+	var scope 	= this;
+	
+	this.clearPaths();
+	
+	// Display the start and end pos
+	this._startpoint.attr("x", data.start.x*this.options.blockSize);
+	this._startpoint.attr("y", data.start.y*this.options.blockSize);
+	this.startpoint = data.start;
+	
+	this._endpoint.attr("x",  data.end.x*this.options.blockSize);
+	this._endpoint.attr("y", data.end.y*this.options.blockSize);
+	this.endpoint = data.end;
+	
+	// Generate the map
+	var x;
+	var y;
+	var type = {h:1,v:1};
+	for (t in type) {
+		for (x=0;x<data[t].length;x++) {
+			for (y=0;y<data[t][x].length;y++) {
+				if (data[t][x][y] == 1) {
+					scope.activateWall(t,x,y);
+				}
+				if (data[t][x][y] == 0) {
+					scope.deactivateWall(t,x,y);
+				}
+			}
+		}
+	}
+};
 mazeEditor.prototype.reload = function() {
 	var scope 	= this;
+	
+	this.clearPaths();
 	
 	// Parse the data
 	var data 	= JSON.parse(this.options.textarea.val());
@@ -419,6 +486,16 @@ mazeEditor.prototype.reload = function() {
 	}
 };
 
+mazeEditor.prototype.clearPaths = function() {
+	var i;
+	
+	// remove the possible solutions
+	for (i=0;i<this.solutionPath.length;i++) {
+		this.solutionPath[i].remove();
+	}
+	this.solutionPath = [];
+}
+
 mazeEditor.prototype.generate = function() {
 	/*
 		LOUTRE-HUNTER ALGORITHM
@@ -426,15 +503,10 @@ mazeEditor.prototype.generate = function() {
 	var scope 	= this;
 	var x;
 	var y;
-	this.difficulty	= 10;
 	
 	this.generating = true;
 	
-	// remove the possible solutions
-	for (i=0;i<this.solutionPath.length;i++) {
-		this.solutionPath[i].remove();
-	}
-	this.solutionPath = [];
+	this.clearPaths();
 	
 	// Generate the visited blocks
 	this.visited = [];
@@ -497,8 +569,8 @@ mazeEditor.prototype.hunt = function() {
 		return true;
 	}
 	
-	// Find where to start searching, based ont he difficulty
-	var start = Math.round(((10-this.difficulty)/10)*(this.corners.length-1));
+	// Find where to start searching, based on the difficulty
+	var start = Math.round(((10-this.options.difficulty)/10)*(this.corners.length-1));
 	if (start < 0) {
 		start = 0;
 	}

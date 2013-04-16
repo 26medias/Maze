@@ -3,20 +3,67 @@
 <head>
 	<title>Maze Demo</title>
 	<meta charset="UTF-8">
-	<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
-	<script type="text/javascript" src="fabric.js"></script>
-	<script type="text/javascript" src="maze.js"></script>
+	<script type="text/javascript" src="jquery-1.8.2.js"></script>
+	<script type="text/javascript" src="json2.js"></script>
+	<script type="text/javascript" src="raphael.js"></script>
+	<script type="text/javascript" src="mazeEditor.js"></script>
+	<meta property="og:title" content="Maze" />
+	<meta property="og:type" content="game" />
+	<meta property="og:url" content="http://www.fleetwit.com/maze/" />
+	<meta property="og:image" content="http://www.fleetwit.com/maze/og.png" />
+	<style type="text/css">
+		ul.toolbar {
+			background-color:	#4063B8;
+			display:			table;
+			list-style:			none;
+			margin:				0;
+			padding:			0;
+		}
+		ul.toolbar > li {
+			background-color:	#4063B8;
+			color:				#ffffff;
+			font-size:			11px;
+			cursor:				pointer;
+			margin:				0;
+			padding:			2px 8px;
+			display:			table-cell;
+			vertical-align:		middle !important;
+		}
+		ul.toolbar > li:hover,
+		ul.toolbar > li.active {
+			background-color:	#253E78;
+		}
+		.text {
+			font-size:		10px;
+			margin:			20px 0;
+		}
+	</style>
 </head>
 <body>
-	<canvas id="stage" width="500" height="500"></canvas>
+	<div class="text">
+		You are the green square. Find your way to the red square.<br />
+		You can use your arrow keys, or you can just drag your green square using the mouse.<br />
+		Can't find your way? <a href="javascript:maze.solve()">Display the solution</a>, <a href="javascript:maze.load(fleetwitMaze);">Load the Fleetwit level</a> or <a href="javascript:maze.generate()">generate a new random maze</a><br />
+		Too hard? Adjust the level of difficulty: <a href="javascript:maze.options.difficulty=1;maze.generate()">1</a>, <a href="javascript:maze.options.difficulty=2;maze.generate()">2</a>, <a href="javascript:maze.options.difficulty=3;maze.generate()">3</a>, <a href="javascript:maze.options.difficulty=4;maze.generate()">4</a>, <a href="javascript:maze.options.difficulty=5;maze.generate()">5</a>, <a href="javascript:maze.options.difficulty=6;maze.generate()">6</a>, <a href="javascript:maze.options.difficulty=7;maze.generate()">7</a>, <a href="javascript:maze.options.difficulty=8;maze.generate()">8</a>, <a href="javascript:maze.options.difficulty=9;maze.generate()">9</a>, <a href="javascript:maze.options.difficulty=10;maze.generate()">10</a>
+	</div>
+	<div id="stage" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;"></div>
+	
 	<script type="text/javascript">
-		var maze = new game_maze({
+		var maze = new mazeEditor({
 			canvasId:	"stage",
-			level:		"level.txt"
+			width:		25,
+			height:		25,
+			blockSize:	20,
+			trail:		false,
+			editor:		false	
 		});
+		
+		var fleetwitMaze = {"start":{"x":0,"y":0},"end":{"x":24,"y":24},"v":[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0],[0,1,1,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,1,0,0,1,0,0,0],[0,0,0,1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,0,0,1,1,1,1,0,0,1,1,0,1,0,0,1,1,0,0,1,1,1,1],[0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,1,0,0,1,1,1,0,0,0,0],[0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,0],[0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,1,1,0,1,0,0,0,1,0,0],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],[0,1,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0],[1,0,0,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,1,1,0,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,1,1,1,0,0,1,1,1],[1,1,0,0,0,1,0,1,0,1,0,0,0,1,1,1,1,0,1,0,0,0,0,0,0],[0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0,1,0,0,1,1,0],[0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,1],[0,1,1,0,0,1,1,1,1,1,0,0,0,1,0,1,0,0,0,1,0,1,1,1,0],[1,0,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,1,1,0,0,0,1],[0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,0,1,1,0,1,0,1,1,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,1,0,1,1,0,1,0,0,1,0],[0,0,1,0,0,1,1,1,1,0,0,0,0,0,1,1,0,0,1,0,0,0,1,1,1],[0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,0],[0,1,1,1,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,1,0,0,0,0],[0,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,0,1,1,0,1,1,1,1],[0,1,1,0,0,0,1,1,1,1,0,0,1,0,1,0,0,1,1,1,0,1,1,1,0],[1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]],"h":[[1,1,1,0,1,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,1,0,0,1],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,0,1,1,0,0,0,1,1,0,1,1],[1,0,1,0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,0,1,1,0,0,1,0],[1,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,1,0,0,0,1,0,0,0,0],[1,1,1,0,1,0,0,0,0,1,1,1,0,0,1,0,1,1,0,0,1,0,1,0,1],[1,1,1,0,1,0,0,0,0,1,1,1,1,0,1,0,0,1,1,0,0,1,0,1,0],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,0,0,1,0,1,1,0,0,1],[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1,1,0],[1,0,1,1,1,1,0,0,0,0,1,1,0,1,0,1,1,0,1,0,1,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0],[1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,1,1,1,1,0],[1,0,0,0,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,1,1,1,0,1],[1,0,1,0,1,1,0,0,0,0,1,1,1,0,0,0,1,1,1,1,0,1,0,1,0],[1,1,0,1,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,0,0,1,0],[1,0,1,0,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,0,1,1,0,0],[1,0,1,1,0,0,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,1,0,1,1],[1,1,1,1,1,0,0,1,0,0,1,1,0,0,1,0,1,0,0,1,1,0,1,0,1],[1,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,0,1,1,0,1,1,1,0,0],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,1],[1,1,0,0,1,0,0,0,0,0,0,1,1,1,0,0,0,1,0,1,0,1,1,1,1],[1,1,0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,0,1,0,0,1,0],[1,1,0,0,1,1,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0],[1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1],[1,0,0,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1]]};
+		
 		$(function () {
 			maze.init();
-			console.log("maze",maze);
+			maze.generate();
+			maze.play();
 		});
 		
 	</script>
