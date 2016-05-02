@@ -4,6 +4,7 @@
 	<title>Maze Demo</title>
 	<meta charset="UTF-8">
 	<script type="text/javascript" src="jquery-1.8.2.js"></script>
+	<script type="text/javascript" src="jquery.mobile.just-touch.js"></script>
 	<script type="text/javascript" src="json2.js"></script>
 	<script type="text/javascript" src="raphael.js"></script>
 	<script type="text/javascript" src="mazeEditor.js"></script>
@@ -11,6 +12,7 @@
 	<meta property="og:type" content="game" />
 	<meta property="og:url" content="http://www.fleetwit.com/maze/" />
 	<meta property="og:image" content="http://www.fleetwit.com/maze/og.png" />
+	<meta name="viewport" content="initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,width=device-width,height=device-height,target-densitydpi=device-dpi,user-scalable=no" />
 	<style type="text/css">
 		ul.toolbar {
 			background-color:	#4063B8;
@@ -34,36 +36,127 @@
 			background-color:	#253E78;
 		}
 		.text {
-			font-size:		10px;
+			font-size:		11px;
 			margin:			20px 0;
+		}
+		#debug {
+			border:		1px solid #000000;
+			padding: 	5px;
+			margin: 	5px;
+		}
+		a {
+			text-decoration:		none;
+			color:					#365BB4;
+		}
+		a.selected {
+			font-weight:			bold;
+			text-decoration:		underline;
 		}
 	</style>
 </head>
 <body>
+	<div id="fb-root"></div>
+	<script>(function(d, s, id) {
+	var js, fjs = d.getElementsByTagName(s)[0];
+	if (d.getElementById(id)) return;
+	js = d.createElement(s); js.id = id;
+	js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=241445585996284";
+	fjs.parentNode.insertBefore(js, fjs);
+	}(document, 'script', 'facebook-jssdk'));</script>
+	
 	<div class="text">
 		You are the green square. Find your way to the red square.<br />
 		You can use your arrow keys, or you can just drag your green square using the mouse.<br />
 		Can't find your way? <a href="javascript:maze.solve()">Display the solution</a>, <a href="javascript:maze.load(fleetwitMaze);">Load the Fleetwit level</a> or <a href="javascript:maze.generate()">generate a new random maze</a><br />
 		Too hard? Adjust the level of difficulty: <a href="javascript:maze.options.difficulty=1;maze.generate()">1</a>, <a href="javascript:maze.options.difficulty=2;maze.generate()">2</a>, <a href="javascript:maze.options.difficulty=3;maze.generate()">3</a>, <a href="javascript:maze.options.difficulty=4;maze.generate()">4</a>, <a href="javascript:maze.options.difficulty=5;maze.generate()">5</a>, <a href="javascript:maze.options.difficulty=6;maze.generate()">6</a>, <a href="javascript:maze.options.difficulty=7;maze.generate()">7</a>, <a href="javascript:maze.options.difficulty=8;maze.generate()">8</a>, <a href="javascript:maze.options.difficulty=9;maze.generate()">9</a>, <a href="javascript:maze.options.difficulty=10;maze.generate()">10</a>
 	</div>
-	<div id="stage" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;"></div>
+	<table>
+		<tbody>
+			<tr>
+				<td valign="top">
+					<div id="stage" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;"></div>
+				</td>
+				<td valign="top">
+					<div class="fb-comments" data-href="http://www.fleetwit.com/maze/" data-width="500" data-num-posts="20"></div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 	
+	<div class="text">
+		<b>Options:</b><br />
+		<table>
+			<tbody>
+				<tr>
+					<td>
+						Elatic
+					</td>
+					<td>
+						<a href="javascript:maze.options.elastic=true;void(0);" data-toggle="elastic" class="selected">On</a>
+						<a href="javascript:maze.options.elastic=false;void(0);" data-toggle="elastic">Off</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Frictions
+					</td>
+					<td>
+						<a href="javascript:maze.options.friction=true;void(0);" data-toggle="friction">On</a>
+						<a href="javascript:maze.options.friction=false;void(0);" data-toggle="friction" class="selected">Off</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Trail
+					</td>
+					<td>
+						<a href="javascript:maze.options.trail=true;void(0);" data-toggle="trail" class="selected">On</a>
+						<a href="javascript:maze.options.trail=false;void(0);" data-toggle="trail">Off</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Difficulty
+					</td>
+					<td>
+						<a href="javascript:maze.options.difficulty=1;maze.generate()" data-toggle="level">1</a>
+						<a href="javascript:maze.options.difficulty=2;maze.generate()" data-toggle="level">2</a>
+						<a href="javascript:maze.options.difficulty=3;maze.generate()" data-toggle="level">3</a>
+						<a href="javascript:maze.options.difficulty=4;maze.generate()" data-toggle="level">4</a>
+						<a href="javascript:maze.options.difficulty=5;maze.generate()" data-toggle="level">5</a>
+						<a href="javascript:maze.options.difficulty=6;maze.generate()" data-toggle="level">6</a>
+						<a href="javascript:maze.options.difficulty=7;maze.generate()" data-toggle="level">7</a>
+						<a href="javascript:maze.options.difficulty=8;maze.generate()" data-toggle="level">8</a>
+						<a href="javascript:maze.options.difficulty=9;maze.generate()" data-toggle="level">9</a>
+						<a href="javascript:maze.options.difficulty=10;maze.generate()" data-toggle="level" class="selected">10</a>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 	<script type="text/javascript">
 		var maze = new mazeEditor({
 			canvasId:	"stage",
 			width:		25,
 			height:		25,
 			blockSize:	20,
-			trail:		false,
-			editor:		false	
+			elastic:	true,
+			friction:	false,
+			trail:		true,
+			editor:		false
 		});
 		
-		var fleetwitMaze = {"start":{"x":0,"y":0},"end":{"x":24,"y":24},"v":[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0],[0,1,1,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,1,0,0,1,0,0,0],[0,0,0,1,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,0,0,1,1,1,1,0,0,1,1,0,1,0,0,1,1,0,0,1,1,1,1],[0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,1,0,0,1,1,1,0,0,0,0],[0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,0,1,0,1,1,1,0],[0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,1,1,0,1,0,0,0,1,0,0],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],[0,1,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0],[1,0,0,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,1,1,0,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,1,1,1,0,0,1,1,1],[1,1,0,0,0,1,0,1,0,1,0,0,0,1,1,1,1,0,1,0,0,0,0,0,0],[0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,0,1,0,0,1,1,0],[0,0,0,0,0,0,1,1,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,1],[0,1,1,0,0,1,1,1,1,1,0,0,0,1,0,1,0,0,0,1,0,1,1,1,0],[1,0,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,1,1,0,0,0,1],[0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,0,1,1,0,1,0,1,1,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,1,0,1,1,0,1,0,0,1,0],[0,0,1,0,0,1,1,1,1,0,0,0,0,0,1,1,0,0,1,0,0,0,1,1,1],[0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,1,0,0,0,1,0,1,0,0,0],[0,1,1,1,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,1,0,0,0,0],[0,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,0,1,1,0,1,1,1,1],[0,1,1,0,0,0,1,1,1,1,0,0,1,0,1,0,0,1,1,1,0,1,1,1,0],[1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]],"h":[[1,1,1,0,1,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,1,0,0,1],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,0,1,1,0,0,0,1,1,0,1,1],[1,0,1,0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,0,1,1,0,0,1,0],[1,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,1,0,0,0,1,0,0,0,0],[1,1,1,0,1,0,0,0,0,1,1,1,0,0,1,0,1,1,0,0,1,0,1,0,1],[1,1,1,0,1,0,0,0,0,1,1,1,1,0,1,0,0,1,1,0,0,1,0,1,0],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,0,0,1,0,1,1,0,0,1],[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1],[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1,1,0],[1,0,1,1,1,1,0,0,0,0,1,1,0,1,0,1,1,0,1,0,1,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0],[1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,1,1,1,1,0],[1,0,0,0,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,1,1,1,0,1],[1,0,1,0,1,1,0,0,0,0,1,1,1,0,0,0,1,1,1,1,0,1,0,1,0],[1,1,0,1,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,0,0,1,0],[1,0,1,0,1,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,0,1,1,0,0],[1,0,1,1,0,0,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0,1,0,1,1],[1,1,1,1,1,0,0,1,0,0,1,1,0,0,1,0,1,0,0,1,1,0,1,0,1],[1,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,0,1,1,0,1,1,1,0,0],[1,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,0,1,1,0,1,0,1,0,1],[1,1,0,0,1,0,0,0,0,0,0,1,1,1,0,0,0,1,0,1,0,1,1,1,1],[1,1,0,0,0,1,0,0,0,0,1,1,1,0,0,0,0,1,0,0,1,0,0,1,0],[1,1,0,0,1,1,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0],[1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1],[1,0,0,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1]]};
+		var fleetwitMaze = {"start":{"x":9,"y":0},"end":{"x":24,"y":24},"v":[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,1,1,0,0,1,0,0],[1,0,0,0,1,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,1,0,0,0,0],[0,1,0,0,0,0,1,0,1,1,1,0,0,0,1,1,1,1,0,1,0,1,1,1,0],[0,0,0,0,1,1,1,0,0,1,0,0,0,0,0,1,1,0,1,0,1,0,1,0,0],[0,0,0,0,1,1,0,0,1,1,1,0,0,0,1,0,0,1,0,1,1,1,0,1,0],[0,0,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,1,0,0,1,0,1,1,0,0,0,1,0,1,1,0,0],[0,1,0,0,1,1,1,0,1,1,1,0,0,1,1,1,0,0,1,0,0,0,0,0,0],[1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,1,1,1,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,0,1,1,1,0,0,0,0,0,1,1,1,0,0,1,0,0,0],[1,0,0,0,0,1,1,0,1,1,1,1,0,0,0,1,0,1,1,1,0,0,1,0,0],[0,1,0,0,1,1,1,0,1,1,1,1,0,0,1,1,0,1,0,0,1,0,0,0,0],[1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],[0,1,0,0,1,1,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,0],[0,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,0,1,1,1,0,0],[0,0,0,1,1,1,1,0,1,1,0,0,0,0,0,1,1,1,0,1,0,0,0,1,0],[0,0,0,0,0,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,0,0,1,1,0],[0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,0,1,0,1,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,0,0,0],[0,0,1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1,1,0,1,0,0],[0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0],[0,1,1,1,1,1,0,0,0,1,0,0,1,1,0,0,1,1,0,1,0,1,1,0,1],[1,1,0,0,0,0,1,1,0,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0]],"h":[[1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0],[1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,0,1,0,1,0,1,1],[1,0,1,0,1,0,0,1,0,0,1,1,1,1,1,0,0,0,0,1,0,0,1,0,1],[1,1,1,0,1,1,1,0,1,0,0,1,1,1,1,0,0,0,1,0,1,1,0,0,1],[1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,0,1,1,0,1,0,0,1,0,1],[1,1,1,0,0,0,1,1,1,0,0,1,1,1,0,1,1,1,1,1,0,0,1,1,1],[1,1,1,0,1,0,0,1,1,1,1,1,1,0,1,0,0,1,1,1,0,1,0,1,1],[1,1,1,0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,0,1,1,0,1,1],[1,0,1,0,1,0,0,1,1,0,0,1,1,1,0,1,0,1,0,1,1,1,1,1,1],[1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],[1,1,1,0,1,1,0,0,1,0,0,1,1,0,0,1,0,0,0,1,1,1,1,1,1],[1,0,1,0,1,0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,1,1,0,1,1],[1,0,1,0,1,1,0,0,1,0,0,0,0,1,1,0,1,1,0,0,0,1,1,0,1],[1,0,1,0,1,0,0,1,1,0,0,0,1,1,1,0,1,0,1,1,0,1,1,1,1],[1,0,1,0,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,1,1,1,1,1],[1,1,1,0,1,0,0,1,1,1,1,1,0,0,1,0,0,0,0,1,1,0,0,1,1],[1,1,1,1,1,0,0,1,1,0,1,1,1,0,1,0,0,0,0,1,0,1,0,1,1],[1,1,1,0,1,1,0,0,1,0,0,1,0,1,0,1,0,0,0,0,1,1,1,0,0],[1,1,1,0,1,0,0,1,1,1,0,1,1,0,0,0,0,0,0,1,0,1,1,0,1],[1,1,1,0,1,1,0,0,1,1,1,1,1,1,0,0,0,1,0,0,1,0,1,1,1],[1,1,1,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,1,1],[1,1,1,0,0,1,0,1,0,1,0,1,1,0,1,1,0,0,0,0,0,0,1,1,1],[1,1,0,0,1,0,1,1,1,0,1,1,0,1,0,1,0,0,0,1,0,0,0,1,1],[1,0,0,1,0,1,1,0,1,1,0,1,1,0,1,0,1,0,0,0,0,0,0,1,0],[1,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1]]};
 		
 		$(function () {
 			maze.init();
 			maze.generate();
 			maze.play();
+			
+			$('[data-toggle]').click(function() {
+				$(this).parent().find('[data-toggle]').removeClass("selected");
+				$(this).addClass("selected");
+			});
 		});
 		
 	</script>

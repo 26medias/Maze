@@ -4,7 +4,7 @@ function game_maze(options) {
 	this.mapbg	= [];	// background level	/ things that are static
 	this.mapfg	= [];	// foreground level / things that move
 	
-	this.blockSize	= 20;
+	this.blockSize	= 30;
 };
 game_maze.prototype.init = function() {
 	this.loadLevel();

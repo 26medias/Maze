@@ -4,6 +4,7 @@
 	<title>Maze Demo</title>
 	<meta charset="UTF-8">
 	<script type="text/javascript" src="jquery-1.8.2.js"></script>
+	<script type="text/javascript" src="jquery.mobile.just-touch.js"></script>
 	<script type="text/javascript" src="json2.js"></script>
 	<script type="text/javascript" src="raphael.js"></script>
 	<script type="text/javascript" src="mazeEditor.js"></script>
@@ -66,10 +67,10 @@
 			</tr>
 			<tr>
 				<td>
-					<div id="stage" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;"></div>
+					<div id="stage" style="width:600px;height:600px;border:1px solid #000000;background-color:#365BB4;"></div>
 				</td>
 				<td>
-					<textarea id="code" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;color:#ffffff;"></textarea>
+					<textarea id="code" data-allowclick="true" style="width:500px;height:500px;border:1px solid #000000;background-color:#365BB4;color:#ffffff;"></textarea>
 				</td>
 			</tr>
 		</tbody>
@@ -79,10 +80,17 @@
 		var maze = new mazeEditor({
 			canvasId:	"stage",
 			textarea:	$("#code"),
-			width:		25,
-			height:		25,
-			blockSize:	20,
-			editor:		true	
+			width:		12,
+			height:		12,
+			blockSize:	50,
+			editor:		true,
+			elastic:	false,
+			difficulty: 10,
+			theme: {
+				start:	"themes/2013race/start.png",
+				end:	"themes/2013race/end.png",
+				bg:		"themes/2013race/bg.png"
+			}
 		});
 		$(function () {
 			maze.init();

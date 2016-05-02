@@ -7,11 +7,16 @@ function mazeEditor(options) {
 		blockSize:	20,
 		editor:		true,
 		trail:		true,
+		friction:	false,
+		elastic:	true,
 		difficulty:	10,
+		margin:		5,
 		opacity:	{
 			active:		0.9,
 			inactive:	0.00
-		}
+		},
+		onWin:		function() {alert("You won!")},
+		theme:		false
 	},options);
 	
 	this.walls		= {
@@ -28,27 +33,46 @@ function mazeEditor(options) {
 	this.lastmove	= {x:0,y:0};
 	
 	this.solutionPath = [];
+	this.trailPath = [];
 
 	this.stage 		= Raphael(this.options.canvasId);
 	
+	
+	if (this.options.theme && this.options.theme.bg) {
+		// Create the background
+		this.bg		= this.stage.image(this.options.theme.bg, 0,0,this.options.blockSize*this.options.width,this.options.blockSize*this.options.height);
+	}
 	
 	this.marker		= this.stage.rect(-50,0,this.options.blockSize,this.options.blockSize);
 	this.marker.attr("fill", "#ffcc00");
 	this.marker.attr("opacity", 0);
 	this.marker.attr("stroke-width", 0);
 	
+	$("body").on("dragstart", "image", function(e) {
+		e.preventDefault();
+	});
 	
-	this._startpoint	= this.stage.rect(-50,0,this.options.blockSize,this.options.blockSize);
-	this._startpoint.attr("fill", "#80AC0B");
-	this._startpoint.attr("opacity", 1);
-	this._startpoint.attr("stroke-width", 0);
-	this.startpoint = {x:0,y:0};
+	if (this.options.theme && this.options.theme.start) {
+		this._startpoint	= this.stage.image(this.options.theme.start, -50,0,this.options.blockSize-(this.options.margin*2),this.options.blockSize-(this.options.margin*2));
+	} else {
+		this._startpoint	= this.stage.rect(-50,0,this.options.blockSize-(this.options.margin*2),this.options.blockSize-(this.options.margin*2));
+		this._startpoint.attr("fill", "#80AC0B");
+		this._startpoint.attr("opacity", 1);
+		this._startpoint.attr("stroke-width", 0);
+	}
+	this.startpoint = {x:this.options.margin,y:this.options.margin};
 	
-	this._endpoint	= this.stage.rect(-50,0,this.options.blockSize,this.options.blockSize);
-	this._endpoint.attr("fill", "#AC007C");
-	this._endpoint.attr("opacity", 1);
-	this._endpoint.attr("stroke-width", 0);
-	this.endpoint = {x:0,y:0};
+	console.log("this._startpoint",this._startpoint);
+	
+	if (this.options.theme && this.options.theme.end) {
+		this._endpoint	= this.stage.image(this.options.theme.end, -50,0,this.options.blockSize-(this.options.margin*2),this.options.blockSize-(this.options.margin*2));
+	} else {
+		this._endpoint	= this.stage.rect(-50,0,this.options.blockSize-(this.options.margin*2),this.options.blockSize-(this.options.margin*2));
+		this._endpoint.attr("fill", "#FFFFFF");
+		this._endpoint.attr("opacity", 1);
+		this._endpoint.attr("stroke-width", 0);
+	}
+	this.endpoint = {x:this.options.margin,y:this.options.margin};
 
 	this._string	= this.stage.rect(200,200,2,50);
 	this._string.attr("fill", "#000000");
@@ -79,35 +103,68 @@ function mazeEditor(options) {
 		}
 	});
 };
+mazeEditor.prototype.unload = function() {
+	$(window).unbind("keydown");
+	$(document).unbind("vmousedown");
+	$(document).unbind("vmouseup");
+	$(document).unbind("vmousemove");
+	$("#"+this.options.canvasId).remove();
+};
 mazeEditor.prototype.init = function() {
 	var scope = this;
 	// events
-	$("#"+this.options.canvasId).bind("mousedown", function(e) {
+	var event_start = function(x,y) {
 		scope.dragging = true;
 		scope.lastpos.x = 0;
 		scope.lastpos.y = 0;
-	});
-	$("#"+this.options.canvasId).bind("mouseup", function(e) {
+	};
+	var event_end = function(x,y) {
 		scope.dragging 	= false;
 		scope.marker.attr("x",-50);
 		scope._string.attr("height", 0);
-	});
-	$("#"+this.options.canvasId).bind("mousemove", function(e) {
+	};
+	var event_move = function(x,y) {
 		if (scope.dragging) {
-			var pos = $(this).position();
-			scope.handleDrag(e.clientX - pos.left, e.clientY - pos.top);
-			var px = scope.startpoint.x*scope.options.blockSize+scope.options.blockSize/2;
-			var py = scope.startpoint.y*scope.options.blockSize+scope.options.blockSize/2;
-			var angle = Math.atan2((e.clientY - pos.top) - py, e.clientX - pos.left - px);
-			scope._string.transform("r"+Math.round(angle*180/3.14159-90)+","+px+","+py+"");
-			var len = Math.sqrt(((e.clientY - pos.top) - py) * ((e.clientY - pos.top) - py) + (e.clientX - pos.left - px) * (e.clientX - pos.left - px))
-			scope._string.attr("height", len);
-			scope._string.attr("x", px);
-			scope._string.attr("y", py);
-			scope._string.toFront();
+			var pos = $("#"+scope.options.canvasId).offset();
+			scope.handleDrag(x - pos.left, y - pos.top);
+			if (scope.options.elastic) {
+				var px = scope.startpoint.x*scope.options.blockSize+scope.options.blockSize/2;
+				var py = scope.startpoint.y*scope.options.blockSize+scope.options.blockSize/2;
+				var angle = Math.atan2((y - pos.top) - py, x - pos.left - px);
+				var len = Math.sqrt(((y - pos.top) - py) * ((y - pos.top) - py) + (x - pos.left - px) * (x - pos.left - px))
+				scope._string.transform("r"+Math.round(angle*180/3.14159-90)+","+px+","+py+"");
+				scope._string.attr("height", len);
+				scope._string.attr("x", px);
+				scope._string.attr("y", py);
+				scope._string.toFront();
+			}
 		}
+	};
+	$(document).bind("vmousedown", function(e) {
+		// exception on hint and instruction buttons on mobiles
+		var targ;
+		if (e.target) {
+			targ = e.target;
+		} else if (e.srcElement) {
+			targ = e.srcElement;
+		}
+		if (targ.nodeType == 3) { // defeat Safari bug
+			targ = targ.parentNode;
+		}
+		if (!$(targ).data || !$(targ).data('allowclick')) {
+			e.preventDefault();
+		}
+		//if( navigator.userAgent.match(/Android/i) ) {
+			
+		//}
+		event_start(e.pageX,e.pageY);
 	});
-	
+	$(document).bind("vmouseup", function(e) {
+		event_end(e.pageX,e.pageY);
+	});
+	$(document).bind("vmousemove", function(e) {
+		event_move(e.pageX,e.pageY);
+	});
 	this.generateGrid();
 };
 mazeEditor.prototype.play = function() {
@@ -133,14 +190,16 @@ mazeEditor.prototype.move = function(vx,vy) {
 		vy = -1;
 	}
 	
-	if (vx != 0 && vy != 0) {
-		if (this.canMove(vx,0)) {
-			vy = 0;
-		} else if (this.canMove(0,vy)) {
-			vx = 0;
+	// elastic moves
+	if (!this.options.friction) {
+		if (vx != 0 && vy != 0) {
+			if (this.canMove(vx,0)) {
+				vy = 0;
+			} else if (this.canMove(0,vy)) {
+				vx = 0;
+			}
 		}
 	}
-	
 	
 	// current are in this.startpoint{x,y}
 	var newPos = {
@@ -162,18 +221,19 @@ mazeEditor.prototype.move = function(vx,vy) {
 			y:	this.startpoint.y+vy
 		};
 		// Move the player
-		this._startpoint.attr("x", this.startpoint.x*this.options.blockSize);
-		this._startpoint.attr("y", this.startpoint.y*this.options.blockSize);
+		this._startpoint.attr("x", this.startpoint.x*this.options.blockSize+this.options.margin);
+		this._startpoint.attr("y", this.startpoint.y*this.options.blockSize+this.options.margin);
 		// Create the trail
 		if (this.options.trail) {
 			var trail	= this.stage.rect(this.startpoint.x*this.options.blockSize,this.startpoint.y*this.options.blockSize,this.options.blockSize,this.options.blockSize);
 			trail.attr("fill", "#ffffff");
 			trail.attr("opacity", 0.1);
 			trail.attr("stroke-width", 0);
+			this.trailPath.push(trail);
 		}
 		this._startpoint.toFront();
 		if (this.startpoint.x == this.endpoint.x && this.startpoint.y == this.endpoint.y) {
-			alert("YOU WON!");
+			this.options.onWin();
 		}
 	}
 };
@@ -194,6 +254,7 @@ mazeEditor.prototype.canMove = function(vx,vy) {
 	return canMove;
 };
 mazeEditor.prototype.handleDrag = function(x,y) {
+	
 	
 	var x2 = Math.floor((x)/this.options.blockSize);
 	var y2 = Math.floor((y)/this.options.blockSize);
@@ -249,8 +310,8 @@ mazeEditor.prototype.handleDrag = function(x,y) {
 		return true;
 	}
 	if (this.action == "endpoint") {
-		this._endpoint.attr("x", x2*this.options.blockSize);
-		this._endpoint.attr("y", y2*this.options.blockSize);
+		this._endpoint.attr("x", x2*this.options.blockSize+this.options.margin);
+		this._endpoint.attr("y", y2*this.options.blockSize+this.options.margin);
 		this.endpoint = {
 			x:	x2,
 			y:	y2
@@ -331,9 +392,6 @@ mazeEditor.prototype.export = function() {
 	var y;
 	var t;
 	
-	if (!this.options.textarea) {
-		return false;
-	}
 	
 	if (this.generating) {
 		return false;
@@ -352,7 +410,12 @@ mazeEditor.prototype.export = function() {
 			}
 		}
 	}
-	this.options.textarea.val(JSON.stringify(buffer));
+	if (this.options.textarea) {
+		this.options.textarea.val(JSON.stringify(buffer));
+	}
+	
+	return JSON.stringify(buffer);
+	
 };
 
 mazeEditor.prototype.generateGrid = function() {
@@ -426,12 +489,12 @@ mazeEditor.prototype.load = function(data) {
 	this.clearPaths();
 	
 	// Display the start and end pos
-	this._startpoint.attr("x", data.start.x*this.options.blockSize);
-	this._startpoint.attr("y", data.start.y*this.options.blockSize);
+	this._startpoint.attr("x", data.start.x*this.options.blockSize+this.options.margin);
+	this._startpoint.attr("y", data.start.y*this.options.blockSize+this.options.margin);
 	this.startpoint = data.start;
 	
-	this._endpoint.attr("x",  data.end.x*this.options.blockSize);
-	this._endpoint.attr("y", data.end.y*this.options.blockSize);
+	this._endpoint.attr("x",  data.end.x*this.options.blockSize+this.options.margin);
+	this._endpoint.attr("y", data.end.y*this.options.blockSize+this.options.margin);
 	this.endpoint = data.end;
 	
 	// Generate the map
@@ -460,12 +523,12 @@ mazeEditor.prototype.reload = function() {
 	var data 	= JSON.parse(this.options.textarea.val());
 	
 	// Display the start and end pos
-	this._startpoint.attr("x", data.start.x*this.options.blockSize);
-	this._startpoint.attr("y", data.start.y*this.options.blockSize);
+	this._startpoint.attr("x", data.start.x*this.options.blockSize+this.options.margin);
+	this._startpoint.attr("y", data.start.y*this.options.blockSize+this.options.margin);
 	this.startpoint = data.start;
 	
-	this._endpoint.attr("x",  data.end.x*this.options.blockSize);
-	this._endpoint.attr("y", data.end.y*this.options.blockSize);
+	this._endpoint.attr("x",  data.end.x*this.options.blockSize+this.options.margin);
+	this._endpoint.attr("y", data.end.y*this.options.blockSize+this.options.margin);
 	this.endpoint = data.end;
 	
 	// Generate the map
@@ -494,6 +557,12 @@ mazeEditor.prototype.clearPaths = function() {
 		this.solutionPath[i].remove();
 	}
 	this.solutionPath = [];
+	
+	// remove the possible solutions
+	for (i=0;i<this.trailPath.length;i++) {
+		this.trailPath[i].remove();
+	}
+	this.trailPath = [];
 }
 
 mazeEditor.prototype.generate = function() {
@@ -552,11 +621,12 @@ mazeEditor.prototype.generate = function() {
 		x:	this.options.width-1,
 		y:	this.options.height-1
 	};
-	this._startpoint.attr("x", this.startpoint.x*this.options.blockSize);
-	this._startpoint.attr("y", this.startpoint.y*this.options.blockSize);
-	this._endpoint.attr("x", this.endpoint.x*this.options.blockSize);
-	this._endpoint.attr("y", this.endpoint.y*this.options.blockSize);
+	this._startpoint.attr("x", this.startpoint.x*this.options.blockSize+this.options.margin);
+	this._startpoint.attr("y", this.startpoint.y*this.options.blockSize+this.options.margin);
+	this._endpoint.attr("x", this.endpoint.x*this.options.blockSize+this.options.margin);
+	this._endpoint.attr("y", this.endpoint.y*this.options.blockSize+this.options.margin);
 	
+	return this.export();
 };
 mazeEditor.prototype.hunt = function() {
 	var scope 	= this;
@@ -676,6 +746,10 @@ mazeEditor.prototype.randomWalk = function() {
 	
 };
 
+mazeEditor.prototype.lightPath = function() {
+	
+};
+
 mazeEditor.prototype.solve = function() {
 	var scope 	= this;
 	var x;
@@ -728,13 +802,20 @@ mazeEditor.prototype.solve = function() {
 	}
 	this.solutionPath = [];
 	
+	var c = 0;
 	for (x=0;x<this.options.width;x++) {
 		for (y=0;y<this.options.height;y++) {
 			if (cell[x][y]) {
+				c++;
 				var solutionPath	= this.stage.rect(x*this.options.blockSize,y*this.options.blockSize,this.options.blockSize,this.options.blockSize);
 				solutionPath.attr("fill", "#ffffff");
 				solutionPath.attr("opacity", 0.6);
 				solutionPath.attr("stroke-width", 0);
+				solutionPath.animate({
+						opacity: 0
+				},
+				5000
+				);
 				this.solutionPath.push(solutionPath);
 			}
 		}
